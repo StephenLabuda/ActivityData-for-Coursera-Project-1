@@ -1,0 +1,194 @@
+---
+title: "Movement Activity for Coursera Submission"
+author: "Stephen Labuda"
+date: "2023-07-11"
+output: html_document
+---
+
+## Reading the File
+
+This code below reads the specified file. For this example, I used 'val' as the name for the data frame.
+
+You should have your working directory set before you run this line.
+
+```{r, echo = TRUE}
+val <- read.csv("activity.csv")  
+```
+
+## Steps per Day
+
+The code below will create a histogram denote the number of steps taking each day for the months of October and November in 2012.
+
+This code creates two vectors, 'StepPerDay' and 'Dates' which are used as the y and x axes respectively. The 'StepPerDay' vector is created from a for loop in which an object 'stepct' is used to sum the steps taken during that row's interval until the net day rolls over. Similarly the 'Dates' vector is created by adding the row's date to a list only when that date is not the same as the previous date.
+
+```{r, echo = TRUE}
+StepPerDay <- c()
+stepct <- 0
+for(i in 2:nrow(val)){
+  if(val$date[i] == val$date[i - 1]){
+    if(is.na(val$step[i]) == FALSE){
+    stepct <- stepct + val$step[i]
+    }
+    else{
+      stepct <- stepct + 0
+    }
+  }
+  else{
+    StepPerDay <- c(StepPerDay, stepct)
+    if(is.na(val$step[i]) == FALSE){
+      stepct <- val$step[i]
+    }
+  }
+}
+StepPerDay <- c(StepPerDay, 0)
+
+Dates <- c(val$date[1])
+for(i in 2:nrow(val)){
+  if(val$date[i] != val$date[i-1]){
+    Dates <- c(Dates, val$date[i])
+  }
+}
+```
+
+Here is the resulting plot.
+
+```{r, echo = TRUE}
+plot(x = as.POSIXct(Dates), y = StepPerDay,
+     xlab = "Dates for Each Element", type = "h",
+     ylab = " Number of Steps Taken", 
+     main = "Number of Steps per Day")
+```
+
+## Mean and Median for Steps per Day
+
+The following r code utilizes the 'StepPerDay' vector we created earlier to find the mean and median values for steps per day.
+
+```{r, echo = TRUE}
+median(StepPerDay)
+mean(StepPerDay)
+```
+
+## Average Steps
+
+The code below delineates the process I used to get the average number of steps at each interval. The code creates a vector called 'AllAverage' which stores the average for each interval. These average are found by adding the number of steps taken during every interval (intervals with a value of NA are not counted towards the average) and divides the sum by the number of intervals already read.
+
+```{r, echo = TRUE}
+AllAverage <- c()
+SumStep <- 0
+for(i in 1:nrow(val)){
+  if(is.na(val$steps[i]) == FALSE){
+    SumStep = SumStep + as.numeric(val$steps[i])
+    AllAverage <- c(AllAverage, SumStep/i)
+  }
+}
+```
+
+Below is the plot for the average number of steps taken throughout the period.
+
+```{r}
+plot(x = as.POSIXct(val$date[!is.na(val$steps)]), y = AllAverage,
+     type = "l", xlab = "Number of Steps Taken", ylab = "Date", 
+     main = "Average Number of Steps Taken")
+```
+
+## Most Steps in a Single Interval
+
+The section of code will return the max value for steps taken in a single five minute interval.
+
+```{r, echo = TRUE}
+max(val$steps[!is.na(val$steps)])
+```
+
+## Dealing with Missing Data
+
+To deal with missing data, we will be removing any value with an NA from the dataset. With this in mind, if there is a day such as Oct. 1 in which there are no complete entries, that day will not have any data.
+
+To do this, we will use the na.omit() function to clear the rows with NA values.
+
+```{r, echo = TRUE}
+removena <- na.omit(val)
+```
+
+## Steps per Day After Accounting for Missing Inputs
+
+The following code delineates the process I used to calculate the numbers of steps per day with the data set that had missing values omitted. The process is the same as before under the haeding for 'Steps per Day'.
+
+```{r, echo = TRUE}
+StepPerDay1 <- c()
+stepct1 <- 0
+for(i in 2:nrow(removena)){
+  if(removena$date[i] == removena$date[i - 1]){
+    stepct1 <- stepct1 + removena$step[i]
+  }
+  else{
+    StepPerDay1 <- c(StepPerDay1, stepct1)
+      stepct1 <- removena$step[i]
+  }
+}
+StepPerDay1 <- c(StepPerDay1, stepct1)
+
+Dates1 <- c(removena$date[1])
+for(i in 2:nrow(removena)){
+  if(removena$date[i] != removena$date[i-1]){
+    Dates1 <- c(Dates1, removena$date[i])
+  }
+}
+```
+
+Plot to display numbers of steps per day after accounting for missing values.
+
+```{r, echo = TRUE}
+plot(x = as.POSIXct(Dates1), y = StepPerDay1,
+     xlab = "Dates for Each Element", type = "h",
+     ylab = " Number of Steps Taken", main = "Number of Steps per Day")
+```
+
+## Compare Intervals for Weekdays and Weekends
+
+The code below sorts out the number of steps taken in each interval by weekdays and weekends and compares the averages.
+
+For this section we are using the 'weekdays()' function and looping through all of the data from our data set without NA elements. The code below sorts out the number of steps at each interval into steps taken during the weekend or on a weekday.
+
+```{r}
+weekday <- list("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+weekdaysteps <- c()
+weekendsteps <- c()
+for(i in 1:nrow(removena)){
+  if(weekdays(as.POSIXct(removena$date[i])) %in% weekday){
+    weekdaysteps <- c(weekdaysteps, removena$steps[i])
+  }
+  else{
+    weekendsteps <- c(weekendsteps, removena$steps[i])
+  }
+}
+```
+
+Below is the code for calculating the respective averages.
+
+```{r}
+sumweekday <- 0
+avgweekday <- c()
+for(i in 1:length(weekdaysteps)){
+  sumweekday <- sumweekday + as.numeric(weekdaysteps[i])
+  avgweekday <- c(avgweekday, sumweekday/i)
+}
+sumweekend <- 0
+avgweekend <- c()
+for(i in 1:length(weekendsteps)){
+  sumweekend <- sumweekend + as.numeric(weekendsteps[i])
+  avgweekend <- c(avgweekend, sumweekend/i)
+}
+```
+
+This following code will create and return the comparison plots for the two data sets.
+
+```{r}
+par(mfrow = c(2, 1))
+par(mar = c(2, 1, 2, 1))
+plot(x = 1:length(avgweekday), y = avgweekday, type = "l", 
+     xlab = "Number of Five-Minute Intervals", ylab = "Number fo Steps Taken",
+     main = "Average Steps Taken on Weekdays")
+plot(x = 1:length(avgweekend), y = avgweekend, type = "l",
+     xlab = "Number of Five-Minute Intervals", ylab = "NUmber of Steps Taken", 
+     main = "Average Steps Taken on Weekends")
+```
